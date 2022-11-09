@@ -1,0 +1,61 @@
+version: "3"
+services:
+  modules:
+    container_name: modules
+    image: kregel/rebase:latest
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    volumes:
+      - ./agent:/agent
+      - ./node_modules:/agent/node_modules
+
+  rebase:
+    build:
+      context: "./rebase-ui/docker"
+      dockerfile: ./Dockerfile
+    environment:
+      - NODE_ENV=dev
+    volumes:
+      - ./rebase-ui:/app
+      - ./node_modules:/app/node_modules
+      - ./agent:/agent
+      - ./node_modules:/agent/node_modules
+    ports:
+      - 5173:5173
+    networks:
+      - development
+  api:
+    build:
+      context: "./api/docker"
+      dockerfile: ./Dockerfile
+    environment:
+      - NODE_ENV=dev
+    volumes:
+      - ./api:/app
+      - ./node_modules:/app/node_modules
+      - ./agent:/agent
+      - ./node_modules:/agent/node_modules
+    ports:
+      - 3000:3000
+    networks:
+      - development
+
+#  api:
+#    build:
+#      context: ./api/docker
+#      dockerfile: Dockerfile
+#    environment:
+#      - NODE_ENV=production
+#    volumes:
+#      - ./api:/app
+#      - ./api/node_modules:/app/node_modules
+#      - ./agent:/agent
+#      - ./agent/node_modules:/agent/node_modules
+#
+#    ports:
+#      - 3000:3000
+#    command: "npm run build"
+networks:
+  development:
+    driver: bridge

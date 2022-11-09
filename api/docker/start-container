@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+set -m
+
+cd /app
+
+npm run dev -- --host

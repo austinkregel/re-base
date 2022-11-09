@@ -1,0 +1,11 @@
+{
+  "name": "@rebase/agent",
+  "version": "0.0.1",
+  "description": "The client to be installed on servers that host code you want to edit.",
+  "main": "index.js",
+  "author": "Austin Kregel <public@kregel.email>",
+  "license": "MIT",
+  "scripts": {
+    "start": "nodemon index.js"
+  }
+}

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -m
+
+cd /agent
+npm run start &
+
+cd /app
+
+npm run dev -- --host

@@ -1,0 +1,11 @@
+{
+  "name": "@rebase/api",
+  "version": "0.0.1",
+  "description": "The server to be installed on a central server that connects to clients you want to edit on.",
+  "main": "index.js",
+  "author": "Austin Kregel <austin@kregel.co>",
+  "license": "MIT",
+  "scripts": {
+    "dev": "node index.js"
+  }
+}
