@@ -104,6 +104,6 @@ app.delete('/api/projects/:id/:name', async (req, res) => {
     res.status(204).send('');
 })
 
-app.use('/', (req, res) => res.sendFile(path_.join(__dirname, '/public/index.html')))
+app.use('/', (req, res) => res.sendFile(path_.join(__dirname, '/../rebase-ui/index.html')))
 
 server.listen(3000, () => console.log('Running on port 3000'));

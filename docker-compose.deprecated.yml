@@ -25,19 +25,31 @@ services:
       - 5173:5173
     networks:
       - development
-  sockend:
+  api:
     build:
-      context: "./rebase-ui/docker-sockend"
+      context: "./api/docker"
       dockerfile: ./Dockerfile
     environment:
       - NODE_ENV=dev
-    ports:
-      - 5555:5555
     volumes:
-      - ./rebase-ui:/app
+      - ./api:/app
       - ./node_modules:/app/node_modules
       - ./agent:/agent
       - ./node_modules:/agent/node_modules
+    ports:
+      - 3000:3000
+    networks:
+      - development
+
+  agent:
+    build:
+      context: "./agent/docker"
+      dockerfile: ./Dockerfile
+    environment:
+      - NODE_ENV=dev
+    volumes:
+      - ./agent:/app
+      - ./node_modules:/app/node_modules
     networks:
       - development
 

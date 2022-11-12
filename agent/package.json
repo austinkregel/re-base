@@ -6,6 +6,11 @@
   "author": "Austin Kregel <public@kregel.email>",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "mesh": "nodemon mesh.js"
+  },
+  "dependencies": {
+    "cote": "^1.0.3",
+    "socket.io": "^4.5.3"
   }
 }
