@@ -64,7 +64,6 @@ export default {
                 this.open = false;
                 return;
             }
-
             axios.post('/api/files/' + this.$store.getters.selectedClient.txt.id, {
                 path: this.file.file_path
             })
@@ -74,8 +73,9 @@ export default {
                 })
         },
         openFile() {
+          console.log(this.$store.getters)
             this.$store.dispatch('openFile', {
-                id: this.$store.getters.selectedClient.txt.id,
+                id: this.$store.getters.selectedClient.id,
                 path: this.file.file_path,
                 file: this.file,
             });

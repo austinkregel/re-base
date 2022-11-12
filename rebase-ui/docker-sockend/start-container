@@ -4,4 +4,4 @@ set -m
 
 cd /app
 
-npm run dev -- --host
+nodemon sockend.js

@@ -4,6 +4,7 @@ import App from './App.vue'
 import { createStore } from 'vuex'
 import Swal from 'sweetalert2';
 import axios from 'axios';
+
 const $on = () => {
 
 }
@@ -28,6 +29,7 @@ const store = createStore({
         },
         clients: {},
         filesOpen: {},
+        nodes: socket
     },
     getters: {
         file(state) {
@@ -60,9 +62,10 @@ const store = createStore({
     },
     mutations: {
         upsertClient(state, client) {
+            console.log('[-]','Adding client', client)
             state.clients = {
                 ...state.clients,
-                [client.txt.id]: client
+                [client.id]: client
             }
         },
         setOpen(state, data) {
@@ -84,12 +87,16 @@ const store = createStore({
             let files = state.filesOpen[file.absolute]
             delete files[file.absolute]
             state.filesOpen = files;
+        },
+        setClients(state, clients) {
+            state.clients = clients
+        },
+        addClient(state, client) {
+            console.log('[-]', 'Client added', client)
+            state.clients.push(client)
         }
     },
     actions: {
-        upsertClient({ commit }, client) {
-            commit('upsertClient', client);
-        },
         deleteClient({ state}, client) {
             const { [client.id]: newClient, ...clients } = state.clients;
             state.clients = clients;
@@ -113,53 +120,48 @@ const store = createStore({
                 }
             };
         },
-        openProject({ commit, getters, state }, { id, name, path }) {
-            commit('setOpen', {
+        openProject({ commit, getters, state }, { id, name, path, ...everythingElse }) {
+            console.log('[i] Opening', {
+                ...everythingElse,
                 clientId: id,
-                projectName: name
+                projectName: name,
             })
-            // once we open a project, we need to fetch the files.
-            axios.post('/api/files/' + id, {
-                path,
+            commit('setOpen', {
+                clientId: everythingElse.client.id,
+                projectName: name,
             })
-                .then(({ data }) => {
-                    commit('setOpenFiles', data);
-                })
-                .catch(e => console.error(e.message))
+            socket.emit('fetch:path', { id, name, val: path })
         },
         openFile({ state, getters, commit }, { path, id, file }) {
-            axios.post('/api/files/' + getters.selectedClient.txt.id, {
-                path,
-            })
-                .then(({ data }) => {
-                    commit('openFile', { data, file })
-                    Bus.$emit('fileChanged', file);
-                })
+            socket.emit('fetch:path', { id, name, val: path })
         }
     },
 })
-import Socket from 'socket.io-client';
-let socket = null;
+import { io } from 'socket.io-client';
+var socket = null;
 function boot() {
-    socket.on('client:connected', client => {
-        console.log({ client })
-        store.dispatch('upsertClient', client);
+    socket.on('connect', () => {
+        socket.emit('whos-there')
     })
-    socket.on('client:updated', client => {
-        console.log({ client })
-        store.dispatch('upsertClient', client);
+    socket.on('i-exist', (client) => {
+        store.commit('upsertClient', client)
+    });
+    socket.on('success:path', (contents) => {
+        console.log('[!]', 'contents found', contents)
+        if (Array.isArray(contents)) {
+            store.commit('setOpenFiles', contents);
+        } else {
+            // store.commit('openFile', { data: contents})
+        }
     })
-    socket.on('client:disconnected', client => {
-        console.log({ client })
-        store.dispatch('deleteClient', client);
-    })
-
-    socket.on('clients', clients => {
-        Object.keys(clients).map(clientId => store.dispatch('upsertClient', clients[clientId]));
+    socket.on('clients', (clients) => {
+        console.log({ clients })
+        store.commit('setClients', clients);
     })
 }
+const websocket = APP_TYPE.command === 'serve' ? 'localhost:5555' : window.location.host
 
-socket = Socket('ws://localhost:3000', {
+socket = io.connect('ws://'+websocket, {
     transports: ['websocket']
 })
 
