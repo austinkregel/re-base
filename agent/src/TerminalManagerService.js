@@ -10,6 +10,7 @@ const terminalResponder = new cote.Responder({
     name: os.hostname()+'-terminal-node',
     namespace: 'terminal',
     respondsTo: ['terminal:create', 'terminal:resize', 'terminal:terminate'], // types of requests this responder
+    port: 22220
 });
 
 terminalResponder.on('terminal:create', (req, cb) => {

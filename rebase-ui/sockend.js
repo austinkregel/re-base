@@ -6,6 +6,8 @@ import statik from 'node-static';
 import '../agent/mesh.js'
 import os from 'os';
 
+let BASE_PORT = 30000;
+
 const fileRequester = new cote.Requester({
     name: 'file-requester',
     namespace: 'file',
@@ -45,7 +47,10 @@ io.on('connection', (socket) => {
     const terminalClientResponder = new cote.Responder({
         name: 'terminal-client',
         namespace: 'terminal',
-        respondsTo: ['terminal:data', 'terminal:terminated']
+        respondsTo: ['terminal:data', 'terminal:terminated'],
+        broadcasts: ['terminal:data', 'terminal:terminated'],
+        port: BASE_PORT,
+
     });
     terminalClientResponder.on('terminal:data', (data) => {
         console.log('[!] terminal:data called');
@@ -119,9 +124,10 @@ io.on('connection', (socket) => {
     });
 });
 
-app.listen(process.argv[2] || 5555);
+app.listen(5555);
 
 const sockend = new cote.Sockend(io, {
     name: 'Sockend',
     // key: 'a certain key'
+    port: 5555,
 });
