@@ -15,6 +15,8 @@ export default defineConfig(({ command, mode }) => {
         command
       },
     },
-    plugins: [vue()]
+    plugins: [
+      vue(),
+    ]
   }
 })

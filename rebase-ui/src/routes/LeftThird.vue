@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-neutral-700 h-full flex flex-col justify-between" :style="collapsed ? 'min-width: 40px;':'min-width: 300px;'">
+    <div class="bg-neutral-900 h-full flex flex-col justify-between" :style="collapsed ? 'min-width: 40px;':'min-width: 300px;'">
         <div class="flex justify-between w-full bg-neutral-800">
             <div v-if="!collapsed" class="flex items-center text-white">
                 <svg class="w-8 h-8 ml-4 mr-2 my-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -15,7 +15,7 @@
                 <svg v-else class="w-4 h-4 text-white stroke-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
         </div>
-        <div class="items-start flex-grow text-sm text-white">
+        <div class="items-start flex-grow text-white">
             <div class="mt-3 px-2 font-bold flex items-center justify-between ">
                 <span>VMS</span>
 
@@ -75,8 +75,8 @@
 </template>
 
 <script>
-import FileOrFolder from "./ProjectLink.vue";
-import ProjectLink from "./ProjectLink.vue";
+import FileOrFolder from "../components/ProjectLink.vue";
+import ProjectLink from "../components/ProjectLink.vue";
 
 export default {
     components: { ProjectLink, FileOrFolder },
@@ -124,7 +124,7 @@ export default {
                 this.$store.dispatch('createProject', {
                     name,
                     path,
-                    client: client.txt.id,
+                    client: client.id,
                 })
             })
         },

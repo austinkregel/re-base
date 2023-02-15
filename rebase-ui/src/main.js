@@ -4,7 +4,7 @@ import App from './App.vue'
 import { createStore } from 'vuex'
 import Swal from 'sweetalert2';
 import axios from 'axios';
-
+import devStore from './store.js';
 const $on = () => {
 
 }
@@ -17,145 +17,35 @@ window.Bus = {
 }
 window.Swal = Swal;
 window.axios = axios
-window.getLocalStorage = (key, defaultValue) => JSON.parse(localStorage.getItem(key) || defaultValue);
+window.getLocalStorage = (key, defaultValue) => JSON.parse(localStorage.getItem(key) || JSON.stringify(defaultValue));
 window.setLocalStorage = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 
-const store = createStore({
-    state: {
-        files: [],
-        open: {
-            clientId: null,
-            projectName: null,
-        },
-        clients: {},
-        filesOpen: {},
-        nodes: socket
-    },
-    getters: {
-        file(state) {
-            if (!state.openFile) {
-                return null;
-            }
-
-            return state.files[state.openFile];
-        },
-        files(state) {
-            return state.files.reduce((files, file) => {
-                return {
-                    ...files,
-                    [file.absolute]: file,
-                }
-            }, {});
-        },
-        project(state) {
-            return state.open.projectName
-        },
-        clients(state) {
-            return Object.values(state.clients);
-        },
-        selectedClient(state){
-            return state.clients[state.open.clientId]
-        },
-        openFiles(state) {
-            return state.filesOpen;
-        }
-    },
-    mutations: {
-        upsertClient(state, client) {
-            console.log('[-]','Adding client', client)
-            state.clients = {
-                ...state.clients,
-                [client.id]: client
-            }
-        },
-        setOpen(state, data) {
-            state.open = data;
-        },
-        setOpenFiles(state, data) {
-            state.files = data;
-        },
-        openFile(state, { data, file,}) {
-            state.filesOpen = {
-                ...state.filesOpen,
-                [file.absolute]: {
-                    ...file,
-                    data
-                }
-            }
-        },
-        closeFile(state, file) {
-            let files = state.filesOpen[file.absolute]
-            delete files[file.absolute]
-            state.filesOpen = files;
-        },
-        setClients(state, clients) {
-            state.clients = clients
-        },
-        addClient(state, client) {
-            console.log('[-]', 'Client added', client)
-            state.clients.push(client)
-        }
-    },
-    actions: {
-        deleteClient({ state}, client) {
-            const { [client.id]: newClient, ...clients } = state.clients;
-            state.clients = clients;
-        },
-        createProject({ state, }, { name, path, client }) {
-            axios.post('/api/projects', {
-                name,
-                path,
-                client,
-            });
-        },
-        deleteProject({ state, }, { id, name }) {
-            axios.delete('/api/projects/' + id + '/' + name);
-            let txt = state.getters.selectedClient.txt;
-            delete txt[name];
-            state.clients = {
-                ...state.clients,
-                [id]: {
-                    ...state.clients[id],
-                    txt
-                }
-            };
-        },
-        openProject({ commit, getters, state }, { id, name, path, ...everythingElse }) {
-            console.log('[i] Opening', {
-                ...everythingElse,
-                clientId: id,
-                projectName: name,
-            })
-            commit('setOpen', {
-                clientId: everythingElse.client.id,
-                projectName: name,
-            })
-            socket.emit('fetch:path', { id, name, val: path })
-        },
-        openFile({ state, getters, commit }, { path, id, file }) {
-            socket.emit('fetch:path', { id, name, val: path })
-        }
-    },
-})
+const store = createStore(devStore)
 import { io } from 'socket.io-client';
+import loadingAscii from "./components/LoadingAscii.vue";
 var socket = null;
 function boot() {
+    store.commit('setSocket', socket)
     socket.on('connect', () => {
         socket.emit('whos-there')
-    })
+    });
+
+    socket.on('disconnect', () => {
+        store.commit('setClients', [])
+        console.log( 'disconnected from socket')
+    });
+
     socket.on('i-exist', (client) => {
         store.commit('upsertClient', client)
     });
-    socket.on('success:path', (contents) => {
-        console.log('[!]', 'contents found', contents)
-        if (Array.isArray(contents)) {
-            store.commit('setOpenFiles', contents);
+    socket.on('success:path', ({ files, file, data, ...all}) => {
+        if (Array.isArray(files)) {
+            store.commit('setOpenFiles', files);
         } else {
-            // store.commit('openFile', { data: contents})
+            store.commit('openFile', { file, data})
         }
     })
     socket.on('clients', (clients) => {
-        console.log({ clients })
         store.commit('setClients', clients);
     })
 }
@@ -169,6 +59,7 @@ boot();
 
 const app = createApp(App);
 
+app.component('loading-ascii', loadingAscii)
 app.use(store);
 
 app.mount('#app')
