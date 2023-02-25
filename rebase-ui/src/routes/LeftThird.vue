@@ -1,5 +1,5 @@
 <template>
-    <div class="bg-neutral-700 h-full flex flex-col justify-between" :style="collapsed ? 'min-width: 40px;':'min-width: 300px;'">
+    <div class="bg-neutral-900 h-full flex flex-col justify-between" :style="collapsed ? 'min-width: 40px;':'min-width: 300px;'">
         <div class="flex justify-between w-full bg-neutral-800">
             <div v-if="!collapsed" class="flex items-center text-white">
                 <svg class="w-8 h-8 ml-4 mr-2 my-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -15,7 +15,7 @@
                 <svg v-else class="w-4 h-4 text-white stroke-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
         </div>
-        <div class="items-start flex-grow text-sm text-white">
+        <div class="items-start flex-grow text-white">
             <div class="mt-3 px-2 font-bold flex items-center justify-between ">
                 <span>VMS</span>
 
@@ -24,7 +24,7 @@
                 </button>
             </div>
             <hr class="my-2 border-neutral-800"/>
-            <div v-for="client in clients" :key="client.fullname">
+            <div v-for="client in clients" :key="client.id">
                 <div class="px-2 pt-2 flex" :class="collapsed ? 'justify-center' : 'justify-between'">
                     <div class="flex items-center">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -42,14 +42,16 @@
                     </button>
                 </div>
 
-                <div class="ml-2">
+                <div class="px-2.5">
                     <project-link v-for="txt in getProjects(client)" v-if="!collapsed" :key="txt.name" :name="txt.name" :client="client">
-                        <svg slot="icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        <template #icon>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                        </template>
                     </project-link>
                 </div>
             </div>
         </div>
-        <div class="bg-neutral-800 flex justify-between">
+        <div class="bg-neutral-800 text-white flex justify-between">
             <div class="p-2 flex flex-wrap w-full items-center">
                 <img src="https://pbs.twimg.com/profile_images/1244859550169206784/AWGcu5Hc_400x400.jpg" alt=""
                      class="w-6 h-6 rounded">
@@ -73,8 +75,8 @@
 </template>
 
 <script>
-import FileOrFolder from "./ProjectLink.vue";
-import ProjectLink from "./ProjectLink.vue";
+import FileOrFolder from "../components/ProjectLink.vue";
+import ProjectLink from "../components/ProjectLink.vue";
 
 export default {
     components: { ProjectLink, FileOrFolder },
@@ -122,14 +124,10 @@ export default {
                 this.$store.dispatch('createProject', {
                     name,
                     path,
-                    client: client.txt.id,
+                    client: client.id,
                 })
             })
-
         },
-        openProject(client, project) {
-            console.log(client, project)
-        }
     },
     computed: {
         clients() {

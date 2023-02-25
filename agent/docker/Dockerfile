@@ -1,6 +1,8 @@
 #A lightweight node image
 FROM kregel/rebase:latest
 WORKDIR /app
+RUN ls -alh /app
 
-
-# Start PM2 as PID 1 process
+COPY start-container /start-container
+RUN chmod +x /start-container
+ENTRYPOINT ["/start-container"]
