@@ -2,7 +2,6 @@ version: "3"
 services:
   modules:
     container_name: modules
-    image: kregel/rebase:latest
     build:
       context: .
       dockerfile: ./docker/Dockerfile

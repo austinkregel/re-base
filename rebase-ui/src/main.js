@@ -47,6 +47,13 @@ function boot() {
     })
     socket.on('clients', (clients) => {
         store.commit('setClients', clients);
+    });
+    socket.on('terminal:created', (terminal) => {
+        console.log('terminal:created', terminal);
+        store.commit('setTerminal', terminal);
+    });
+    socket.on('terminal:terminated', terminal => {
+
     })
 }
 const websocket = APP_TYPE.command === 'serve' ? 'localhost:5555' : window.location.host

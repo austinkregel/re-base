@@ -37,24 +37,20 @@
 
           <div class="flex flex-col gap-2">
             <div class="text-red-500 uppercase my-2 font-bold tracking-wide">Danger Zone</div>
-
             <button
-                v-if="$store.getters.openProject.settings.template"
+                v-if="$store.getters.openProject?.settings?.template"
                 class="bg-red-500 text-white px-1 rounded-lg border-2 border-red-500"
-
                 @click="redeploy"
             >Redeploy Development</button>
             <button
                 class="bg-red-500 text-white px-1 rounded-lg border-2 border-red-500"
                 @click="destroy"
-            >Delete {{$store.getters.openProject.name }}, and files</button>
+            >Delete {{$store.getters.openProject?.name }}, and files</button>
             <button
                 class="bg-red-500 text-white px-1 rounded-lg border-2 border-red-500"
                 @click="destroy"
-            >Delete {{$store.getters.openProject.name }}, keep files</button>
+            >Delete {{$store.getters.openProject?.name }}, keep files</button>
           </div>
-
-
         </div>
       </div>
       <div v-else-if="$store.getters.loadingFiles && !collapsed" class="w-full h-full flex gap-2 items-center justify-center">

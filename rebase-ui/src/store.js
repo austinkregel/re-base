@@ -86,6 +86,7 @@ export default {
         terminals: {},
     },
     getters: {
+        terminal: state => Object.values(state.terminals)[0],
         settings: state => state.settings,
         tab: (state, getters,) => getters.openFiles[state.open.tab],
         file(state) {
@@ -115,9 +116,14 @@ export default {
         socket: state => state.socket
     },
     mutations: {
-        openTerminal() {},
         resizeTerminal(id) {},
         closeTerminal(id) {},
+        setTerminal(state, terminal) {
+            state.terminals = {
+                ...state.terminals,
+                [terminal.id]: terminal
+            }
+        },
         setSocket(state, socket) {
             state.socket = socket;
         },
@@ -228,22 +234,18 @@ export default {
             })
             state.socket.emit('fetch:path', { id: client.id, name, path })
         },
-        openFile({ state, getters, commit }, { path, id, file, ...all }) {
-            console.log('[!] openFile', {
-                file,
-                id,
-                path,
-                all
-            })
+        openFile({ state, getters, commit, dispatch }, { ...file }) {
+            console.log('[!] openFile',  file)
             if (file.is_directory) {
-                this.$store.dispatch('openSubDirectory', {
-                    file: this.file,
-                    files
+
+                dispatch('openSubDirectory', {
+                    file,
+                    // files
                 })
-                state.socket.emit('fetch:path', { id, name, path })
+                state.socket.emit('fetch:path', file)
 
             } else {
-                state.socket.emit('fetch:path', { id, name, path })
+                state.socket.emit('fetch:path',file)
             }
         },
         async setupEditor({ state, getters, commit, dispatch }, { editor }) {
@@ -258,5 +260,15 @@ export default {
                 }
             })
         },
+        createTerminal({ state, getters, commit, dispatch }, { path, name, id }) {
+            state.socket.emit('terminal:create', {
+                path,
+            });
+        },
+        destroyTerminal({ state, getters, commit, dispatch }, terminal) {
+            console.log(terminal)
+            delete state.terminals[terminal.id];
+            state.socket.emit('terminal:terminate', terminal);
+        }
     },
 }

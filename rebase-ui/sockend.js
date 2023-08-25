@@ -43,14 +43,13 @@ const io = (new Server).listen(app);
 
 io.on('connection', (socket) => {
     console.log('[!] socket connected');
-    // each socket will have it's own responder since each tab could have its own terminal open
-    const terminalClientResponder = new cote.Responder({
+    // // each socket will have it's own responder since each tab could have its own terminal open
+    const terminalClientResponder = new cote.Requester({
         name: 'terminal-client',
-        namespace: 'terminal',
+        namespace: 'term',
         respondsTo: ['terminal:data', 'terminal:terminated'],
-        broadcasts: ['terminal:data', 'terminal:terminated'],
+        broadcasts: ['terminal:create', 'terminal:key'],
         port: BASE_PORT,
-
     });
     terminalClientResponder.on('terminal:data', (data) => {
         console.log('[!] terminal:data called');
@@ -105,18 +104,29 @@ io.on('connection', (socket) => {
             height
         })
     });
+
+    socket.on('terminal:key', (data) => {
+        terminalClientResponder.send({
+            type: 'terminal:key',
+            data
+        })
+    })
+
     socket.on('terminal:create', () => {
-        console.log('[!] terminal:Created called');
+        console.log('[!] terminal:created called');
         // we should request a terminal to be created from cote for a given node.
         // This creation should return some kind of PID.
-        terminalRequester.send({
+        terminalRequester.send( {
             type: 'terminal:create',
-        }).then((...args) => {
+        }).then((args) => {
             console.log('Terminal created', args);
+            socket.emit('terminal:data', args)
+
         })
         .catch((e) => {
             console.error('error hapepenenening', e);
         })
+            .finally(() => {console.log('something finally happened')})
     });
     socket.on('terminal:terminate', (...args) => {
         // the UI is requesting the terminal be terminated.

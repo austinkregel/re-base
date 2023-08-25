@@ -91,7 +91,9 @@ export default {
         return;
       }
 
-      console.log('[!] opening this ', this.file)
+      console.log('[!] opening this ', this.file);
+
+
       // axios.post('/api/files/' + this.file.feature_id, {
       //   path: this.file.file_path
       // })
@@ -99,9 +101,7 @@ export default {
       //       this.files = data;
       //       this.open = true;
       //     })
-      this.$store.dispatch('openFolder', {
-        path: '',
-      })
+      this.$store.dispatch('openFile', this.file)
     },
     openFile() {
       this.$store.dispatch('openFile', {
