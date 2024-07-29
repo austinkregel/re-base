@@ -1,11 +1,15 @@
 <script setup>
-import LeftThird from "./routes/LeftThird.vue";
+import LeftThird from "./components/LeftThird.vue";
 import CommandPalette from "./components/CommandPalette.vue";
-import { onMounted } from "vue";
+import { onBeforeMount, onMounted } from "vue";
 import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
 import DynamicIcon from "./components/Atoms/Icons/DynamicIcon.vue";
 const store = useStore();
-onMounted(() => {
+onBeforeMount(() => {
+  const route = useRoute();
+
+  console.log({ ...route})
   store.dispatch('initialize');
 });
 
@@ -13,7 +17,6 @@ onMounted(() => {
 
 <template>
   <div class="flex max-h-screen w-full bg-neutral-900 h-full text-gray-900 dark:text-white">
-    <left-third></left-third>
     <RouterView /> 
     <CommandPalette />
 

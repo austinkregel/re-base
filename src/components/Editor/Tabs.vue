@@ -29,7 +29,7 @@ export default {
 
     },
     tabName(file) {
-      const parts = file.file_path.split('/');
+      const parts = file.path.split('/');
 
       const possibleName = parts[parts.length - 1];
 
@@ -45,7 +45,7 @@ export default {
       return Object.values(this.$store.getters.openFiles)
           .filter(file => file.absolute == this.$store.getters.tab?.absolute)
           .map(file => {
-        const name = file.file_path.split('/');
+        const name = file.path.split('/');
 
         return name[name.length - 1];
       })

@@ -1,9 +1,9 @@
 <template>
-    <middle-third></middle-third>
-    <right-third></right-third>
+    <LeftThird></LeftThird>
+    <RouterView />
 </template>
 
 <script setup>
-import MiddleThird from "./MiddleThird.vue";
-import RightThird from "./RightThird.vue";
+import { RouterView } from "vue-router";
+import LeftThird from "../components/LeftThird.vue";
 </script>

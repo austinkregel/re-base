@@ -28,6 +28,7 @@ pub(crate) fn read_file(file_path: &str) -> io::Result<String> {
     Ok(contents)
 }
 
+
 pub(crate) fn update_file(file_path: &str, new_content: &str) -> io::Result<()> {
     fs::write(file_path, new_content)?;
 

@@ -15,7 +15,7 @@
                 <svg v-else class="w-4 h-4 text-white stroke-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </button>
         </div>
-        <div class="items-start flex-grow text-white h-full">
+        <div class="items-start flex-grow text-white h-full ">
             <div class="mt-3 font-bold flex items-center justify-between" :class="[collapsed ? 'px-1': 'px-2']">
                 <span :class="[collapsed ? 'text-xs': '']">VMS</span>
 
@@ -80,8 +80,8 @@
                     <MenuItems class="absolute left-0 bottom-8 mt-2 w-56 origin-bottom-right divide-y divide-gray-100 rounded-md bg-white dark:bg-stone-800 shadow-lg ring-1 ring-black/5 focus:outline-none">
                         <div class="px-1 py-1">
                             <MenuItem v-slot="{ active }">
-                                <button :class="[ active ? 'bg-violet-500 text-white' : 'text-gray-900 dark:text-white', 'group flex w-full items-center rounded-md px-2 py-2 text-sm', ]">
-                                    Delete
+                                <button @click="logout" :class="[ active ? 'bg-violet-500 text-white' : 'text-gray-900 dark:text-white', 'group flex w-full items-center rounded-md px-2 py-2 text-sm', ]">
+                                    Logout
                                 </button>
                             </MenuItem>
                         </div>
@@ -158,6 +158,10 @@ export default {
         },
         addMachineToConnect() {
             console.log('addMachineToConnect',)
+        },
+        logout() {
+            localStorage.removeItem('accessToken');
+            location.replace('/login');
         }
     },
     computed: {

@@ -69,6 +69,8 @@
 </template>
 
 <script>
+import { invoke } from '@tauri-apps/api';
+
 export default {
   props: ['file'],
   data: () => ({
@@ -85,30 +87,20 @@ export default {
     },
   },
   methods: {
-    onToggleFolderExpand() {
+    async onToggleFolderExpand() {
       if (this.open) {
         this.open = false;
         return;
       }
 
-      console.log('[!] opening this ', this.file);
+      const files = JSON.parse(await invoke('async_fetch_path', this.file));
 
-
-      // axios.post('/api/files/' + this.file.feature_id, {
-      //   path: this.file.file_path
-      // })
-      //     .then(({ data }) => {
-      //       this.files = data;
-      //       this.open = true;
-      //     })
-      this.$store.dispatch('openFile', this.file)
+      this.open = true;
+      this.files = files;
     },
     openFile() {
-      this.$store.dispatch('openFile', {
-        id: this.file.feature_id,
-        path: this.file.file_path,
-        file: this.file,
-      });
+      console.log('openFile', this.file);
+      this.$store.dispatch('openFile', this.file);
     },
   }
 }

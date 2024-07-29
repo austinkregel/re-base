@@ -1,6 +1,6 @@
 <template>
   <div class="flex flex-wrap h-screen font-mono text-base">
-    <div class="bg-neutral-900 h-full border-l-2 border-black flex flex-col" :style="collapsed ? 'width: 55px;':'width: 300px;'">
+    <div class="bg-neutral-900  h-full border-l-2 border-black flex flex-col" :style="collapsed ? 'width: 55px;':'width: 300px;'">
       <div id="tabs" class="flex w-full justify-between" :class="{ 'flex-wrap': !collapsed, 'flex-col': collapsed }">
         <div class="flex" :class="{ 'flex-wrap': !collapsed, 'flex-col': collapsed }">
           <button @click="tab = 'files'" :class="[tab === 'files' ? 'bg-neutral-800' : 'bg-neutral-900']" class="py-2 px-3">
@@ -15,7 +15,7 @@
           <svg v-else class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
         </button>
       </div>
-      <div v-if="!collapsed && ! $store.getters.loadingFiles" class="p-2 bg-neutral-800 flex-grow max-h-screen overflow-hidden">
+      <div v-if="!collapsed && ! $store.getters.loadingFiles" class="p-2 bg-neutral-800 flex-grow max-h-screen overflow-y-scroll">
         <div v-if="tab === 'files'" id="tab-content">
           <FileExplorer />
         </div>
