@@ -1,4 +1,4 @@
-# Re:base Tauri
+# Re:base
 This project is written in Rust, and the frontend stack is Vue/Vite/Tailwind.
 
 Heavily inspired by the UI of the now defunct [Koding](https://koding.com).
