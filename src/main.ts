@@ -6,6 +6,7 @@ import devStore from './store.js';
 import router from './routes.js';
 import Notifications from 'notiwind';
 import loadingAscii from "./components/LoadingAscii.vue";
+
 // @ts-ignore
 window.axios = axios
 // @ts-ignore

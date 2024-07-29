@@ -1,12 +1,14 @@
 <template>
     <span class="relative inline-block">
-        <img v-if="image" :src="image ?? ''" :class="[size, rounded ? 'rounded-full' : 'rounded-lg']"/>
+        <img v-if="image && image?.startsWith('http')" :src="image ?? ''" :class="[size, rounded ? 'rounded-full' : 'rounded-lg']"/>
+        <DynamicIcon v-else :icon-name="image" :class="[size, rounded ? 'rounded-full' : 'rounded-lg']"/>
         <slot />
     </span>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import DynamicIcon from './DynamicIcon.vue';
 
 const { 
     xs,

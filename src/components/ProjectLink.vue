@@ -22,7 +22,11 @@ export default {
     props: ['name', 'client'],
     methods: {
         async disconnectProject() {
-            await this.$store.dispatch('deleteProject', { id: this.client.txt.id, name: this.name })
+            console.log('disconnecting project', this.client.txt, this.name)
+            await this.$store.dispatch('deleteProject', {
+                client: this.client,
+                name: this.name,
+            })
         },
         openProject() {
           // this.$store.commit('setClient')

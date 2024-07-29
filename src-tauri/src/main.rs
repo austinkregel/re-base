@@ -160,7 +160,6 @@ struct Response {
 async fn initialize(state: State<'_, AppState>, name: String, client_id: String, token: String) -> Result<Response, String> {
     println!("Got initialize request from interface, {}, {}", name, client_id);
     let hostname = get_hostname().unwrap_or_else(|| "unknown".to_string());
-    println!("Token: {}", token);
     
     let client = Client {
         id: client_id.clone(),
@@ -188,9 +187,9 @@ async fn initialize(state: State<'_, AppState>, name: String, client_id: String,
 
 // When the client disconnects, we remove it from the list of clients
 #[tauri::command]
-async fn deinitialize(state: State<'_, AppState>, client_id: String) -> Result<(), String> {
+async fn deinitialize(_state: State<'_, AppState>, client_id: String) -> Result<(), String> {
     println!("Got disconnect request from interface, {}", client_id);
-    state.servers.lock().await.remove(&client_id);
+    _state.servers.lock().await.remove(&client_id);
     Ok(())
 }
 
@@ -229,7 +228,7 @@ async fn login(state: State<'_, AppState>, email: String, password: String) -> R
             // TODO: Change how this is created....
             users.insert("admin@admin.com".to_string(), auth.hash_password("password"));
 
-            let encoded_users = serde_json::to_string(&users).unwrap();
+            let encoded_users: String = serde_json::to_string(&users).unwrap();
             file_utils::update_file(path, &encoded_users).unwrap();
             users
         }
@@ -315,6 +314,12 @@ async fn upsert_clients(_state: State<'_, AppState>, clients: Vec<Client>) -> Re
         // println json serialize the client
         println!("Client: {:?}", client);
     }
+    //write the server list to a file
+    let path = "servers.json";
+    let clients = _state.servers.lock().await.clone();
+    let encoded_servers: String = serde_json::to_string(&clients).unwrap();
+    file_utils::update_file(path, &encoded_servers).unwrap();
+
     Ok(())
 }
 

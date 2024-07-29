@@ -107,6 +107,7 @@ interface IGetters {
     openProject: any;
     socket: any;
     open: any;
+    user: any;
 }
 
 interface IActionParameter {
@@ -263,6 +264,7 @@ const store: {
         clients: (state: IState) => state.clients,
         openProject: (state: IState) => state.open?.client,
         open: (state: IState) => state.open,
+        user: (state: IState) => state.open?.clientId,
     },
     mutations: {
         toggleTerminal(state: IState) {
@@ -270,7 +272,6 @@ const store: {
         },
         setContextMenuFile(state: IState, file: any) {
             state.contextMenuFile = file;
-            console.log('set context menu file', file)
         },
         // @ts-ignore
         resizeTerminal(state: IState, id: string) {},
@@ -310,7 +311,6 @@ const store: {
             if (typeof data !== 'string') {
                 data = JSON.stringify(data, null, 4);
             }
-            console.log('open file', file, data)
             state.filesOpen = {
                 ...state.filesOpen,
                 [file.absolute]: {
@@ -346,11 +346,9 @@ const store: {
             }
         },
         closeFile(state: IState, file: any) {
-            state.open = undefined as any;
+            // state.open = undefined as any;
             let files = state.filesOpen;
-            console.log('files', files)
             delete files[file.absolute]
-            console.log('files', files)
             state.filesOpen = files;
         
 
@@ -363,8 +361,9 @@ const store: {
             state.filesOpen[file.absolute].data = data;
             state.filesOpen[file.absolute].isDirty = state.filesOpen[file.absolute].originalData !== data;
         },
-        setClients(state: IState, clients: any) {
+        async setClients(state: IState, clients: any) {
             state.clients = clients
+            await invoke('upsert_clients', { clients: Object.values(clients)});
         },
     },
     actions: {
@@ -380,15 +379,14 @@ const store: {
                 client,
             });
         },
-        deleteProject({ state, getters }: IActionParameter, { id, name }: any) {
+        deleteProject({ state, getters, commit }: IActionParameter, { client, name }: any) {
+            console.log('deleting project', client, name);
+            
+            delete state.clients[client.id].txt[name];
+
+
             // delete txt[name];
-            // state.clients = {
-            //     ...state.clients,
-            //     [id]: {
-            //         ...state.clients[id],
-            //         txt
-            //     }
-            // };
+            commit('setClients', state.clients)
         },
         async openProject({ dispatch, commit, state }: IActionParameter, { client, name, path }: any) {
             dispatch('openFile', {client, name, path})
@@ -396,7 +394,6 @@ const store: {
         async openFile({ state, dispatch, commit }: IActionParameter, { ...file }: any) {
 
             if (file.hasOwnProperty('is_directory')) {
-                console.log('open file' ,file, );
                 const data = await invoke('async_read_file', { path: file.path})
                 commit('openFile', { 
                     data,
@@ -407,7 +404,6 @@ const store: {
             }
             const files = JSON.parse(await invoke('async_fetch_path', file));
 
-            console.log('[!] openFile',  file, files )
             state.open.clientId = file.client.id;
             if (file.is_directory) {
 
@@ -428,8 +424,6 @@ const store: {
                 name: "saveFile",
                 bindKey: {win: "Ctrl-s", mac: "Command-s"},
                 async exec() {
-                    console.log('save file', getters.tab.data, )
-
                     await invoke('async_write_file', {
                         path: getters.tab.path,
                         contents: getters.tab.data,
@@ -459,11 +453,6 @@ const store: {
                 setLocalStorage('client_id', client_id);
             }
 
-
-            console.log({
-                name: 'developer',
-                client_id: client_id,
-            });
             // We need to setup listeners for tauri events here.
             const { hostname, servers } = await invoke('initialize', {
                 name: 'developer',

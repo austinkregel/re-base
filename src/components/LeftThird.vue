@@ -56,16 +56,15 @@
         <div class="bg-neutral-800 text-white flex items-center justify-between pt-2" :class="[collapsed ? 'px-2': 'px-4']">
             <Menu as="div" class="relative inline-block text-left">
                 <div>
-                    <MenuButton class="inline-flex w-full justify-center rounded-md text-sm font-medium text-white">
+                    <MenuButton class="inline-flex w-full justify-center items-center gap-2 rounded-md text-sm font-medium text-white">
                         <AvatarWithIndicator 
                             :xs="true"
                             :rounded="true"
                             type="s"
                             position="bottom"
-                            image="https://avatars.githubusercontent.com/u/1010370?v=4"
-                        >
-
-                        </AvatarWithIndicator>
+                            image="UserIcon"
+                        />
+                        <span v-if="!collapsed">{{ $store.getters.user }}</span>
                     </MenuButton>
                 </div>
 
@@ -81,35 +80,6 @@
                         <div class="px-1 py-1">
                             <MenuItem v-slot="{ active }">
                                 <button @click="logout" :class="[ active ? 'bg-violet-500 text-white' : 'text-gray-900 dark:text-white', 'group flex w-full items-center rounded-md px-2 py-2 text-sm', ]">
-                                    Logout
-                                </button>
-                            </MenuItem>
-                        </div>
-                    </MenuItems>
-                </transition>
-            </Menu>
-                        
-            <Menu as="div" class="relative inline-block text-left" v-if="!collapsed">
-                <div>
-                    <MenuButton class="inline-flex w-full justify-center rounded-md text-sm font-medium text-white" >
-                        <svg class="w-6 h-6 stroke-current text-white"  viewBox="0 0 24 24"  xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-                        </svg>
-                    </MenuButton>
-                </div>
-
-                <transition
-                    enter-active-class="transition duration-100 ease-out"
-                    enter-from-class="transform scale-95 opacity-0"
-                    enter-to-class="transform scale-100 opacity-100"
-                    leave-active-class="transition duration-75 ease-in"
-                    leave-from-class="transform scale-100 opacity-100"
-                    leave-to-class="transform scale-95 opacity-0"
-                >
-                    <MenuItems class="absolute right-0 bottom-8 mt-2 w-56 origin-bottom-right divide-y divide-gray-100 rounded-md bg-white dark:bg-stone-800 shadow-lg ring-1 ring-black/5 focus:outline-none">
-                        <div class="px-1 py-1">
-                            <MenuItem v-slot="{ active }">
-                                <button :class="[active ? 'bg-violet-500 text-white' : 'text-gray-900 dark:text-white','group flex w-full items-center rounded-md px-2 py-2 text-sm',]">
                                     Logout
                                 </button>
                             </MenuItem>
