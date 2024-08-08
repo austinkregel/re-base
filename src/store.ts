@@ -108,6 +108,7 @@ interface IGetters {
     socket: any;
     open: any;
     user: any;
+    client: (state: IState) => any,
 }
 
 interface IActionParameter {
@@ -262,6 +263,7 @@ const store: {
         editor: (state: IState) => state.editor,
         loadingFiles: (state: IState) => state.loadingFiles,
         clients: (state: IState) => state.clients,
+        client: (state: IState) => state.clients[state.open?.client],
         openProject: (state: IState) => state.open?.client,
         open: (state: IState) => state.open,
         user: (state: IState) => state.open?.clientId,
@@ -289,6 +291,7 @@ const store: {
                 [client.id]: client
             }
 
+            console.log('clients', { ...state.clients })
             await invoke('upsert_clients', { clients: Object.values(state.clients)});
         },
         setOpen(state: IState, data: any) {
@@ -384,14 +387,32 @@ const store: {
             
             delete state.clients[client.id].txt[name];
 
-
             // delete txt[name];
-            commit('setClients', state.clients)
+            commit('setClients', state.clients )
+        },
+        async createFile(f, { name }: any) {
+            await invoke('async_write_file', { 
+                path: name,
+                contents: "",
+                md5: MD5(""),
+            })
+        },
+        async createDirectory(_, { name, }: { name: string }) {
+            await invoke('async_create_directory', { path: name })
         },
         async openProject({ dispatch, commit, state }: IActionParameter, { client, name, path }: any) {
             dispatch('openFile', {client, name, path})
+
+            state.open.clientId = file.client.id;
+            state.open.path = file.path;
+
+            // We should also fetch details about the project's directory.
+            //  .idea config
+            //  .vsconfig
+            //  docker-compose etc..
+            // 
         },
-        async openFile({ state, dispatch, commit }: IActionParameter, { ...file }: any) {
+        async openFile({ commit }: IActionParameter, { ...file }: any) {
 
             if (file.hasOwnProperty('is_directory')) {
                 const data = await invoke('async_read_file', { path: file.path})
@@ -404,7 +425,6 @@ const store: {
             }
             const files = JSON.parse(await invoke('async_fetch_path', file));
 
-            state.open.clientId = file.client.id;
             if (file.is_directory) {
 
                 commit('openSubDirectory', {

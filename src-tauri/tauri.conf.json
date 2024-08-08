@@ -27,6 +27,7 @@
         "resizable": true
       }
     ],
+
     "security": {
       "csp": null
     },

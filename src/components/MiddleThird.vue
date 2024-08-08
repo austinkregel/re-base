@@ -16,8 +16,8 @@
         </button>
       </div>
       <div v-if="!collapsed && ! $store.getters.loadingFiles" class="p-2 bg-neutral-800 flex-grow max-h-screen overflow-y-scroll">
-        <div v-if="tab === 'files'" id="tab-content">
-          <FileExplorer />
+        <div v-if="tab === 'files'" class="w-full h-full">
+          <FileExplorer class="h-full"/>
         </div>
         <div v-else-if="tab === 'settings'" class="space-y-4">
           <NodeSettings />

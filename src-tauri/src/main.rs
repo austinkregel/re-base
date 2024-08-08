@@ -3,11 +3,13 @@
 
 mod file_utils;
 mod auth;
+mod state;
 
-use std::{collections::HashMap, fs::File, io::Seek };
+use std::{collections::HashMap, fs::File, os };
 use auth::Auth;
-
+use std::path::Path;
 use portable_pty::{native_pty_system, CommandBuilder, PtyPair, PtySize, PtySystem};
+use state::Node;
 use std::{
     io::{BufRead, BufReader, Read, Write},
     process::exit,
@@ -17,7 +19,10 @@ use std::{
 };
 use local_ip_address::local_ip;
 use serde::{Deserialize, Serialize};
-use tauri::{async_runtime::Mutex as AsyncMutex, State};
+use tauri::{api::path::home_dir, async_runtime::Mutex as AsyncMutex, plugin::{Builder, Plugin}, AppHandle, Runtime, State};
+use tokio;
+
+use tauri::plugin::TauriPlugin;
 
 #[derive(Serialize, Deserialize)]
 struct PluginManifest {
@@ -32,9 +37,8 @@ struct AppState {
     reader: Arc<AsyncMutex<BufReader<Box<dyn Read + Send>>>>,
 
     authenticated: Arc<AsyncMutex<HashMap<String, String>>>,
-    servers: Arc<AsyncMutex<HashMap<String, Client>>>,
 
-    host: Arc<AsyncMutex<String>>,
+    client_state: Arc<AsyncMutex<state::ClientState>>,
 }
 
 fn get_hostname() -> Option<String> {
@@ -128,31 +132,10 @@ async fn async_resize_pty(rows: u16, cols: u16, _state: State<'_, AppState>) -> 
         .map_err(|_| ())
 }
 
-// the payload type must implement `Serialize` and `Clone`.
-#[derive(serde::Serialize)]
-struct Payload {
-    name: String,
-    client_id: String,
-}
-
-#[derive(serde::Serialize, Clone)]
-struct TxtRecords {
-    name: String,
-    path: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
-struct Client {
-    id: String,
-    name: String,
-    ip: String,
-    txt: HashMap<String, String>,
-}
-
 #[derive(serde::Serialize)]
 struct Response {
     hostname: String,
-    servers: Vec<Client>,
+    servers: Vec<state::Node>,
     token: Option<String> ,
 }
 // clients on the rust side, refers to all the hosts; not browsers.
@@ -161,26 +144,18 @@ async fn initialize(state: State<'_, AppState>, name: String, client_id: String,
     println!("Got initialize request from interface, {}, {}", name, client_id);
     let hostname = get_hostname().unwrap_or_else(|| "unknown".to_string());
     
-    let client = Client {
-        id: client_id.clone(),
-        name: hostname.clone(),
-        ip: local_ip().unwrap().to_string(),
-        txt: HashMap::new(),
-    };
-    if state.servers.lock().await.contains_key(&client.id) {
-        return Ok(Response {
-            hostname,
-            servers: state.servers.lock().await.values().cloned().collect(),
-            token: None
-        })
-    }
 
-    state.servers.lock().await.insert(client.id.clone(), client.clone());
+    state.client_state.lock().await.add_node(state::Node {
+        id: client_id.clone(),
+        name: name.clone(),
+        local_ip: local_ip().unwrap().to_string(),
+        txt: HashMap::new(),
+    }).await.unwrap();
 
   // println!("Message: {}", payload.message);
     Ok(Response {
         hostname,
-        servers: state.servers.lock().await.values().cloned().collect(),
+        servers: state.client_state.lock().await.get_nodes().await.unwrap(),
         token: None
     })
 }
@@ -189,7 +164,7 @@ async fn initialize(state: State<'_, AppState>, name: String, client_id: String,
 #[tauri::command]
 async fn deinitialize(_state: State<'_, AppState>, client_id: String) -> Result<(), String> {
     println!("Got disconnect request from interface, {}", client_id);
-    _state.servers.lock().await.remove(&client_id);
+    _state.client_state.lock().await.delete_node(&client_id).await.unwrap();
     Ok(())
 }
 
@@ -256,7 +231,7 @@ async fn login(state: State<'_, AppState>, email: String, password: String) -> R
 
     Ok(Response {
         hostname: "hostname".to_string(),
-        servers: state.servers.lock().await.values().cloned().collect(),
+        servers: state.client_state.lock().await.get_nodes().await.unwrap(),
         token: Some(token.to_string())
     })
 }
@@ -269,7 +244,7 @@ async fn logout(state: State<'_, AppState>, token: String) -> Result<Response, S
 
     Ok(Response {
         hostname: "hostname".to_string(),
-        servers: state.servers.lock().await.values().cloned().collect(),
+        servers: state.client_state.lock().await.get_nodes().await.unwrap(),
         token: None
     })
 }
@@ -308,17 +283,20 @@ async fn async_fetch_path(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-async fn upsert_clients(_state: State<'_, AppState>, clients: Vec<Client>) -> Result<(), String> {
+async fn upsert_clients(_state: State<'_, AppState>, clients: Vec<Node>) -> Result<(), String> {
     for client in clients {
-        _state.servers.lock().await.insert(client.id.clone(), client.clone());
+        if _state.client_state.lock().await.node_exists(client.id.as_str()).await {
+            _state.client_state.lock().await.update_node(client.clone()).await.unwrap();
+
+        } else {
+            _state.client_state.lock().await.add_node(client.clone()).await.unwrap();
+        }
+
         // println json serialize the client
         println!("Client: {:?}", client);
     }
     //write the server list to a file
-    let path = "servers.json";
-    let clients = _state.servers.lock().await.clone();
-    let encoded_servers: String = serde_json::to_string(&clients).unwrap();
-    file_utils::update_file(path, &encoded_servers).unwrap();
+    _state.client_state.lock().await.save_to_file("../servers.json").await.unwrap();
 
     Ok(())
 }
@@ -335,8 +313,27 @@ async fn async_write_file(path: String, contents: String, md5: String) -> Result
         return Err("MD5 hash does not match".to_string());
     }
 
+    let local_path = path.clone();
+
+    if !Path::new(local_path.as_str()).exists() {
+        print!("{}", local_path.as_str());
+        println!("does not exist, creating empty file");
+        fs::OpenOptions::new()
+        .create_new(true)
+        .write(true)
+        .append(true)
+        .open(local_path)
+        .unwrap()
+        .write("".as_bytes())
+        .unwrap();
+
+        if contents == "" {
+            return Ok(())
+        }    
+    }
+
     // if it does, open it
-    let mut file: File = File::open(&path).unwrap();
+    let mut file: File = File::open(path.as_str()).unwrap();
     // get the contents of the file, so we can try to md5 the contents
     let mut file_contents: String = String::new();
     match file.read_to_string(&mut file_contents) {
@@ -368,6 +365,32 @@ async fn async_write_file(path: String, contents: String, md5: String) -> Result
     }
 }
 
+#[tauri::command]
+async fn async_create_directory(path: String) -> Result<(), String> {
+    println!("Request to create new directory");
+    if !Path::new(path.as_str()).exists() {
+        let new_path = path.clone();
+        fs::DirBuilder::new()
+        .recursive(true)
+        .create(path)
+        .unwrap();
+        println!("Created directory {}", new_path);
+    }
+
+    Ok(())
+}
+
+// remember to call `.manage(MyState::default())`
+#[tauri::command]
+async fn init_discovery(state: State<'_, AppState>) -> Result<(), String> {
+    let mut project_details: HashMap<String, String> = HashMap::new();
+    let mut project_booleans: HashMap<String, bool> = HashMap::new();
+
+    project_booleans.insert("yes".to_string(), true).unwrap();
+
+    Ok(())
+}
+
 fn main() {
     let pty_system: Box<dyn PtySystem + Send> = native_pty_system();
 
@@ -383,36 +406,49 @@ fn main() {
     let reader = pty_pair.master.try_clone_reader().unwrap();
     let writer = pty_pair.master.take_writer().unwrap();
 
-    tauri::Builder::default()
-        .manage(AppState {
-            pty_pair: Arc::new(AsyncMutex::new(pty_pair)),
-            writer: Arc::new(AsyncMutex::new(writer)),
-            reader: Arc::new(AsyncMutex::new(BufReader::new(reader))),
-            servers: Arc::new(AsyncMutex::new(HashMap::new())),
-            authenticated: Arc::new(AsyncMutex::new(HashMap::new())),
-            
-            host: Arc::new(AsyncMutex::new("".to_string())),
-        })
+    let client_state = state::ClientState::new(local_ip().unwrap().to_string());
 
-        .invoke_handler(tauri::generate_handler![
-            async_write_to_pty,
-            async_resize_pty,
-            async_create_shell,
-            async_read_from_pty,
-            
-            async_read_file,
-            async_fetch_path,
-            async_write_file,
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(async {
+            client_state.load_from_file("../servers.json").await.unwrap();
+
+        });
+
+    tauri::Builder::default()
+    .manage(AppState {
+        pty_pair: Arc::new(AsyncMutex::new(pty_pair)),
+        writer: Arc::new(AsyncMutex::new(writer)),
+        reader: Arc::new(AsyncMutex::new(BufReader::new(reader))),
+        authenticated: Arc::new(AsyncMutex::new(HashMap::new())),
+
+        client_state: Arc::new(AsyncMutex::new(client_state)),   
+    })
+    .invoke_handler(tauri::generate_handler![
+        async_write_to_pty,
+        async_resize_pty,
+        async_create_shell,
+        async_read_from_pty,
         
-            initialize,
-            deinitialize,
-            login,
-            logout,
-            upsert_clients,
-        ])
-        .run(tauri::generate_context!())
-        // Once we're running, add the client to the list of servers
-        .expect("error while running tauri application");
+        async_read_file,
+        async_fetch_path,
+        async_write_file,
+    
+        async_create_directory,
+
+        initialize,
+        deinitialize,
+        login,
+        logout,
+        upsert_clients,
+
+        init_discovery
+    ])
+    .run(tauri::generate_context!())
+    // Once we're running, add the client to the list of servers
+    .expect("error while running tauri application");
 }
 
 
